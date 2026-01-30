@@ -188,6 +188,34 @@
                             <span id="liquidityZone" class="value">--</span>
                         </div>
                     </div>
+
+                    <!-- Manual Buttons -->
+                    <div class="manual-actions">
+                        <button id="buyBtn" class="trade-btn buy">Buy / Long</button>
+                        <button id="sellBtn" class="trade-btn sell">Sell / Short</button>
+                    </div>
+
+                    <!-- API Connection Toggle -->
+                    <div class="api-connection-area">
+                        <button id="toggleApiFormBtn" class="text-btn small">🔌 Connect Binance Testnet API</button>
+
+                        <form id="apiForm" class="api-form hidden">
+                            <div class="form-group">
+                                <label>Testnet API Key</label>
+                                <input type="text" id="apiKey" placeholder="Enter Testnet API Key">
+                            </div>
+                            <div class="form-group">
+                                <label>Testnet Secret Key</label>
+                                <input type="password" id="apiSecret" placeholder="Enter Testnet Secret">
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn primary small">Connect</button>
+                                <button type="button" id="disconnectBtn" class="btn secondary small"
+                                    disabled>Disconnect</button>
+                            </div>
+                            <p class="crypto-note">Use keys from testnet.binancefuture.com</p>
+                        </form>
+                    </div>
                 </section>
 
                 <!-- Bot Analysis & Thinking -->

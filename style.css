@@ -1096,8 +1096,7 @@ body::before {
 .opportunity-badge.ready {
     background: rgba(0, 245, 255, 0.1);
     border: 1px solid var(--accent-cyan);
-    box-shadow: 0 0 15px rgba(0, 245, 255, 0.3);
-    animation: readyPulse 2s ease-in-out infinite;
+    box-shadow: 0 0 10px rgba(0, 245, 255, 0.2);
 }
 
 @keyframes opportunityFound {
@@ -1569,5 +1568,77 @@ input:checked+.slider:before {
 
     .form-actions {
         flex-direction: column;
+    }
+}
+
+/* API Connection Area */
+.api-connection-area {
+    margin-top: var(--spacing-md);
+    padding-top: var(--spacing-md);
+    border-top: 1px solid var(--border-color);
+}
+
+.api-form {
+    margin-top: var(--spacing-sm);
+    background: rgba(0, 0, 0, 0.2);
+    padding: var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    animation: fadeIn 0.3s ease;
+}
+
+.api-form .form-group {
+    margin-bottom: var(--spacing-sm);
+}
+
+.api-form input {
+    width: 100%;
+    padding: 8px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: var(--text-primary);
+}
+
+.text-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0;
+    font-size: 0.85rem;
+    text-decoration: underline;
+}
+
+.text-btn:hover {
+    color: var(--accent-cyan);
+}
+
+.text-btn.success {
+    color: var(--accent-green);
+    text-decoration: none;
+    cursor: default;
+}
+
+.crypto-note {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    margin-top: var(--spacing-xs);
+    font-style: italic;
+}
+
+/* Utilities */
+.hidden {
+    display: none !important;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }

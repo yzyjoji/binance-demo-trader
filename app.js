@@ -225,6 +225,92 @@ const SimEngine = {
                 ${o.pnl !== 0 ? `<span class="${o.pnl >= 0 ? 'success' : 'danger'}">${o.pnl.toFixed(2)}</span>` : ''}
             </div>
         `).join('');
+    },
+
+    // ===== API Integration =====
+    connectApi: async (key, secret) => {
+        state.apiKey = key;
+        state.apiSecret = secret;
+
+        try {
+            await SimEngine.fetchAccountData();
+            state.sim.useApi = true;
+            console.log('API Connected!');
+            alert('Connected to Binance Testnet! Showing REAL account data.');
+
+            // Update UI
+            document.getElementById('toggleApiFormBtn').textContent = '✅ Connected to Testnet';
+            document.getElementById('toggleApiFormBtn').classList.add('success');
+            document.getElementById('apiForm').classList.add('hidden');
+            document.getElementById('disconnectBtn').disabled = false;
+
+            // Start Sync Loop
+            setInterval(() => SimEngine.fetchAccountData(), 5000);
+
+        } catch (error) {
+            console.error(error);
+            alert('API Connection Failed: ' + error.message);
+        }
+    },
+
+    fetchAccountData: async () => {
+        if (!state.apiKey || !state.apiSecret) return;
+
+        const baseUrl = 'https://testnet.binancefuture.com';
+        const timestamp = Date.now();
+        const queryString = `timestamp=${timestamp}`;
+        const signature = await SimEngine.hmacSHA256(state.apiSecret, queryString);
+
+        try {
+            const response = await fetch(`${baseUrl}/fapi/v2/account?${queryString}&signature=${signature}`, {
+                headers: { 'X-MBX-APIKEY': state.apiKey }
+            });
+            const data = await response.json();
+
+            if (data.code) throw new Error(data.msg); // Binance Error
+
+            // Update Balance
+            state.sim.balance = parseFloat(data.totalWalletBalance);
+            state.sim.equity = parseFloat(data.totalMarginBalance);
+
+            // Update Positions
+            const activePositions = data.positions.filter(p => parseFloat(p.positionAmt) !== 0 && p.symbol === 'BTCUSDT');
+
+            state.sim.positions = activePositions.map(p => ({
+                id: 'REAL-' + Date.now() + Math.random(),
+                symbol: p.symbol,
+                type: parseFloat(p.positionAmt) > 0 ? 'LONG' : 'SHORT',
+                entryPrice: parseFloat(p.entryPrice),
+                quantity: Math.abs(parseFloat(p.positionAmt)),
+                leverage: parseInt(p.leverage),
+                margin: parseFloat(p.initialMargin),
+                pnl: parseFloat(p.unrealizedProfit),
+                roe: 0, // Calculate manually if needed
+                markPrice: 0,
+                stopLoss: 0,
+                takeProfit: 0
+            }));
+
+            SimEngine.updateUI();
+
+        } catch (error) {
+            console.error('Fetch Account Error:', error);
+            // Don't throw to keep loop alive
+        }
+    },
+
+    hmacSHA256: async (key, message) => {
+        const encoder = new TextEncoder();
+        const keyData = encoder.encode(key);
+        const msgData = encoder.encode(message);
+        const cryptoKey = await crypto.subtle.importKey(
+            'raw', keyData, { name: 'HMAC', hash: 'SHA-256' },
+            false, ['sign']
+        );
+        const signature = await crypto.subtle.sign('HMAC', cryptoKey, msgData);
+        return Array.from(new Uint8Array(signature))
+            .map(b => b.toString(16).padStart(2, '0'))
+            .join('');
     }
 };
 
@@ -1259,42 +1345,44 @@ function handleApiSubmit(event) {
 
     const apiKey = document.getElementById('apiKey').value;
     const apiSecret = document.getElementById('apiSecret').value;
-    const autoTrade = document.getElementById('autoTrade').checked;
 
     if (!apiKey || !apiSecret) {
-        alert('Please enter both API Key and Secret');
+        alert('Please enter both Testnet API Key and Secret');
         return;
     }
 
-    // Store API credentials (in production, use secure storage)
-    state.apiKey = apiKey;
-    state.apiSecret = apiSecret;
-    state.autoTrade = autoTrade;
-    state.apiConnected = true;
-
-    // Update UI
-    document.getElementById('apiStatus').textContent = 'Connected';
-    document.getElementById('apiStatus').className = 'status-badge status-connected';
-    document.getElementById('disconnectBtn').disabled = false;
-
-    // Clear form
-    document.getElementById('apiKey').value = '';
-    document.getElementById('apiSecret').value = '';
-
-    alert('API connected successfully! (Demo mode - no actual trades will be executed)');
+    SimEngine.connectApi(apiKey, apiSecret);
 }
 
 function handleApiDisconnect() {
     state.apiKey = null;
     state.apiSecret = null;
-    state.autoTrade = false;
-    state.apiConnected = false;
+    state.sim.useApi = false;
 
-    document.getElementById('apiStatus').textContent = 'Disconnected';
-    document.getElementById('apiStatus').className = 'status-badge status-disconnected';
+    // UI Reset
+    document.getElementById('toggleApiFormBtn').textContent = '🔌 Connect Binance Testnet API';
+    document.getElementById('toggleApiFormBtn').classList.remove('success');
+    document.getElementById('apiForm').classList.add('hidden');
     document.getElementById('disconnectBtn').disabled = true;
-    document.getElementById('autoTrade').checked = false;
+
+    alert('Disconnected from Testnet. Returning to Local Simulation Mode.');
+
+    // Reset Balance to default if desired
+    state.sim.balance = 10000;
+    state.sim.equity = 10000;
+    state.sim.positions = [];
+    SimEngine.updateUI();
 }
+
+// Toggle API Form
+document.addEventListener('DOMContentLoaded', () => {
+    const toggleBtn = document.getElementById('toggleApiFormBtn');
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', () => {
+            document.getElementById('apiForm').classList.toggle('hidden');
+        });
+    }
+});
 
 function resetPerformanceStats() {
     if (confirm('Are you sure you want to reset all performance statistics?')) {
